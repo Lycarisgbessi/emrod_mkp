@@ -19,6 +19,9 @@ coverage/
 # OS / editor noise
 Thumbs.db
 
+# Bundle serverless généré par esbuild (npm run build:api) — artefact de build
+api/index.mjs
+
 # Lockfile npm généré sous Windows : casse les builds Linux (bindings natifs
 # optionnels absents, bug npm/cli#4828). Le repo référence bun.lock à la place.
 package-lock.json

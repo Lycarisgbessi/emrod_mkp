@@ -5,7 +5,7 @@ import http from 'node:http';
 import cookieParser from 'cookie-parser';
 import path from 'node:path';
 import fs from 'node:fs';
-import { createServer as createViteServer } from 'vite';
+import type { createServer as ViteDevServerFactory } from 'vite';
 import { createApiRouter } from './server/routes';
 import { db, initDatabase } from './server/db';
 
@@ -102,6 +102,11 @@ ${urls.map((u) => `  <url><loc>${u}</loc></url>`).join('\n')}
       );
     }
     const disableHmr = process.env.DISABLE_HMR === 'true';
+    // Import dynamique : vite (et sa chaîne lightningcss/rolldown) ne doit
+    // JAMAIS être chargé en production — il alourdirait le bundle serverless.
+    const { createServer: createViteServer } = (await import('vite')) as {
+      createServer: typeof ViteDevServerFactory;
+    };
     const vite = await createViteServer({
       server: {
         middlewareMode: true,
