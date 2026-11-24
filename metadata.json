@@ -1,0 +1,8 @@
+{
+  "name": "Remix MarketForge AI",
+  "description": "Generate your complete marketplace platform automatically by analyzing and processing your project specifications and requirements.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

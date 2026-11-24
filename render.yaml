@@ -1,0 +1,31 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Blueprint Render — déploiement en un clic :
+#   Render Dashboard → New → Blueprint → branch main → Apply
+# Render demande DATABASE_URL à la première activation (jamais stocké ici).
+# ─────────────────────────────────────────────────────────────────────────────
+services:
+  - type: web
+    name: emrod-marketplace
+    runtime: node
+    plan: starter
+    # Neon héberge la base en us-east-2 (Ohio) : région la plus proche.
+    region: ohio
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # postgresql://user:password@host/neondb?sslmode=require — fourni dans
+      # le dashboard Render (jamais committé dans le repo).
+      - key: DATABASE_URL
+        sync: false
+      # Secret JWT généré automatiquement par Render (rotation = redéploiement).
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PG_POOL_MAX
+        value: "5"
+      # true = démarrage production sans les données de démonstration.
+      - key: PURGE_DEMO_DATA
+        value: "false"

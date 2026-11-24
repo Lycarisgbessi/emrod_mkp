@@ -1,0 +1,23 @@
+node_modules/
+build/
+dist/
+dev-dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# SQLite database (runtime data: credentials hashes, tracking tokens) — never commit
+*.db
+*.db-shm
+*.db-wal
+
+# Generated Web Push VAPID keys persistence (if stored on disk)
+.vapid-keys.json
+
+# OS / editor noise
+Thumbs.db
+
+# Uploaded KYC documents (runtime data)
+uploads/
