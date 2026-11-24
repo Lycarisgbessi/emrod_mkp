@@ -1,0 +1,7 @@
+# Exclu du déploiement Vercel (inutile au runtime, réduit le payload d'upload)
+.aistudio/
+docs/
+bun.lock
+README.md
+DEPLOIEMENT.md
+metadata.json

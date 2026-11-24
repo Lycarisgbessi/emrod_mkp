@@ -27,3 +27,4 @@ uploads/
 
 .vercel
 .env*
+.aistudio/
