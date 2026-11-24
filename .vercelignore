@@ -1,7 +1,10 @@
 # Exclu du déploiement Vercel (inutile au runtime, réduit le payload d'upload)
+# NB : bun.lock est volontairement INCLUS — il guide `bun install` côté Vercel
+# (gestion correcte des bindings natifs multi-plateformes de rolldown/esbuild,
+# contrairement au package-lock.json généré sous Windows, bug npm/cli#4828).
 .aistudio/
 docs/
-bun.lock
 README.md
 DEPLOIEMENT.md
 metadata.json
+package-lock.json

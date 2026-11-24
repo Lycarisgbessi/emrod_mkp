@@ -19,6 +19,10 @@ coverage/
 # OS / editor noise
 Thumbs.db
 
+# Lockfile npm généré sous Windows : casse les builds Linux (bindings natifs
+# optionnels absents, bug npm/cli#4828). Le repo référence bun.lock à la place.
+package-lock.json
+
 # Vercel CLI local state
 .vercel/
 
