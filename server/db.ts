@@ -1800,11 +1800,48 @@ async function ensureAdditionalMarketplaceData(): Promise<void> {
 /**
  * Boot unique de la base : schéma, migrations, seeds. Appelé par server.ts
  * avant d'écouter le port (les requêtes exigent un schéma complet).
+ *
+ * Fast-path : une fois la base prête, un flag versionné dans `platform_rules`
+ * court-circuite initSchema/seed — indispensable en serverless (Vercel) où
+ * chaque instance froide exécute initDatabase() au premier hit. Incrémenter
+ * SCHEMA_VERSION pour forcer un rebuild au prochain boot après une évolution
+ * de schéma ou de seed.
  */
+const SCHEMA_VERSION = 1;
+
 export async function initDatabase(): Promise<void> {
+  const wantsPurge = process.env.PURGE_DEMO_DATA?.trim().toLowerCase() === 'true';
+  let readyFlag: { value_json: string } | undefined;
+  try {
+    readyFlag = await db
+      .prepare(`SELECT value_json FROM platform_rules WHERE key = 'schema_ready'`)
+      .get() as { value_json: string } | undefined;
+  } catch {
+    // Table absente (tout premier boot) → rebuild complet ci-dessous.
+  }
+  if (readyFlag) {
+    let upToDate = false;
+    let purgeDone = false;
+    try {
+      upToDate = Number(JSON.parse(readyFlag.value_json)?.version) >= SCHEMA_VERSION;
+      purgeDone = Boolean(
+        await db.prepare(`SELECT key FROM platform_rules WHERE key = 'demo_purged_at'`).get()
+      );
+    } catch {
+      // Flag corrompu ou requête en échec → par sécurité on rebuild.
+    }
+    if (upToDate && (!wantsPurge || purgeDone)) return;
+  }
+
   await initSchema();
   await seedDatabase();
   await ensureAdditionalMarketplaceData();
+  await db
+    .prepare(
+      `INSERT INTO platform_rules (key, value_json, updated_at) VALUES ('schema_ready', ?, ?)
+       ON CONFLICT (key) DO UPDATE SET value_json = EXCLUDED.value_json, updated_at = EXCLUDED.updated_at`
+    )
+    .run(JSON.stringify({ version: SCHEMA_VERSION }), new Date().toISOString());
   printGeneratedSeedPasswords();
   await purgeDemoData();
 }

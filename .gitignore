@@ -19,5 +19,8 @@ coverage/
 # OS / editor noise
 Thumbs.db
 
+# Vercel CLI local state
+.vercel/
+
 # Uploaded KYC documents (runtime data)
 uploads/

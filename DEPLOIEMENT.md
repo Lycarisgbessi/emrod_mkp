@@ -10,14 +10,14 @@ Guide complet pour mettre la plateforme en production. La base de données est
 | Élément | Où l'obtenir |
 |---|---|
 | Base PostgreSQL | [neon.tech](https://neon.tech) → copier la chaîne `postgresql://…?sslmode=require` |
-| Hébergement applicatif | Render (blueprint fourni), Railway, ou Docker anywhere |
+| Hébergement applicatif | **Vercel** (recommandé, config fournie), Railway, Docker anywhere |
 | Secrets | `DATABASE_URL`, `JWT_SECRET` — **jamais dans le code source** |
 
 > ⚠️ **Sécurité des identifiants** : quiconque possède `DATABASE_URL` peut se
 > connecter à la base (y compris réclamer le compte admin au premier démarrage).
 > Ne le partagez jamais, ne le commitez jamais. Si une URL a déjà circulé en
 > clair (chat, mail, capture), **rotez le mot de passe** dans la console Neon
-> (Roles &_PASSWORD → Reset password) avant la mise en production.
+> (Roles & Passwords → Reset password) avant la mise en production.
 
 ---
 
@@ -27,29 +27,47 @@ Guide complet pour mettre la plateforme en production. La base de données est
 |---|---|---|
 | `DATABASE_URL` | ✅ | Chaîne PostgreSQL Neon (`sslmode=require`) |
 | `JWT_SECRET` | ✅ | Clé de signature des sessions (64 hex recommandé : `openssl rand -hex 32`) |
-| `NODE_ENV` | recommandé | `production` → sert le build `dist/` au lieu du middleware Vite |
-| `PORT` | non | Port d'écoute (défaut 3000 ; Render/Railway l'injectent) |
-| `PG_POOL_MAX` | non | Taille du pool PostgreSQL (défaut 5 ; Neon free = 5 max conseillé) |
-| `PURGE_DEMO_DATA` | non | `true` = supprime le catalogue/commandes de démonstration au boot (idempotent) |
-| `APP_URL` | non | URL publique pour le sitemap (défaut `https://emroddf.com`) |
+| `PG_POOL_MAX` | recommandé | **`1` sur Vercel** (chaque instance serverless a son pool ; le pooler Neon fait le multiplexage). Défaut 5 ailleurs. |
+| `NODE_ENV` | auto | `production` sur Vercel/Docker → sert le build `dist/` |
+| `PURGE_DEMO_DATA` | non | `true` = supprime le catalogue/commandes de démonstration au prochain boot (idempotent, mémorisé) |
+| `APP_URL` | recommandé | URL publique (sitemap SEO). Ex. `https://emrod-mkp.vercel.app` |
 | `SMTP_HOST/PORT/USER/PASS` | non | Envoi réel des courriels (sinon journalisés en base, table `email_log`) |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | non | Notifications push stables entre déploiements (sinon générées et stockées en base — fonctionne aussi) |
 | `DJOMY_*` | prod paiements | Clés API Djomy ; sans clés = simulateur sandbox |
 
 En local, ces valeurs vivent dans `.env` (ignoré par git — voir `.env.example`).
 
 ---
 
-## 2. Option A — Render (blueprint fourni)
+## 2. Option A — Vercel (config fournie : `vercel.json` + `api/`)
 
-1. Pousser ce repo sur GitHub (branche `main`).
-2. Render Dashboard → **New → Blueprint** → sélectionner le repo.
-3. Render lit `render.yaml` et demande `DATABASE_URL` : coller la chaîne Neon.
-   `JWT_SECRET` est généré automatiquement.
-4. **Apply** → build `npm ci && npm run build`, démarrage `npm start`,
-   health check sur `/api/health`.
+Le backend Express tourne en fonction serverless (`api/index.ts`) et le front
+Vite est servi depuis le CDN Vercel (`dist/`).
 
-Au premier boot, le serveur crée le schéma et les données de base sur Neon
-(idempotent — les redémarrages ne dupliquent rien).
+1. Pousser ce repo sur GitHub (déjà fait : `emrod_mkp`, branche `main`).
+2. Aller sur **vercel.com/new** → importer le repo `Lycarisgbessi/emrod_mkp`.
+3. Dans **Environment Variables**, ajouter au minimum :
+   - `DATABASE_URL` = chaîne Neon
+   - `JWT_SECRET` = 64 hex
+   - `PG_POOL_MAX` = `1`
+   - `APP_URL` = l'URL finale du site
+4. **Deploy**. La config `vercel.json` s'applique automatiquement :
+   - build `npm run build` → statique `dist/` sur le CDN ;
+   - `/api/*` et `/sitemap.xml` → fonction serverless (timeout 60 s) ;
+   - tout le reste → SPA (`index.html`).
+
+Vercel redéploie automatiquement à chaque push sur `main`.
+
+### Comportement serverless à connaître
+
+- **Cold start** : la première requête d'une instance initialise la connexion
+  à la base (fast-path versionné : le schéma/seed ne se rejouent qu'une fois —
+  flag `schema_ready` dans `platform_rules`; incrémenter `SCHEMA_VERSION` dans
+  `server/db.ts` après toute évolution de schéma).
+- **Filesystem read-only** : aucune écriture disque n'est faite par le serveur
+  (KYC en base, push VAPID en base/env) — déjà compatible.
+- **Neon scale-to-zero** : après une pause, la première requête peut prendre
+  1-2 s de plus (réveil de la base). Un plan Neon always-on supprime la latence.
 
 ### Première connexion admin (first-run claim)
 
@@ -59,21 +77,21 @@ mot de passe. Faites-le **immédiatement** après le déploiement.
 
 ### Passage en production « propre »
 
-Mettre `PURGE_DEMO_DATA=true` une fois, redémarrer, puis remettre `false`.
-Toutes les données vitrines (commandes, avis, payouts, produits Fouta fictifs,
-coordonnées bancaires de démo) sont retirées ; le flag mémorise l'opération.
+Mettre `PURGE_DEMO_DATA=true`, redéployer (une requête suffit à déclencher le
+boot), puis remettre `false`. Les données vitrines (commandes, avis, payouts,
+produits Fouta fictifs, coordonnées bancaires de démo) sont retirées.
+
+### Alternative : CLI Vercel
+
+```bash
+npm i -g vercel
+vercel login
+vercel --prod        # lie le repo et déploie ; env vars via vercel env add
+```
 
 ---
 
-## 3. Option B — Railway / n'importe quel host Node
-
-- Build : `npm ci && npm run build`
-- Start : `npm start`
-- Mêmes variables d'environnement que ci-dessus.
-
----
-
-## 4. Option C — Docker
+## 3. Option B — Docker (anywhere)
 
 ```bash
 docker build -t emrod-marketplace .
@@ -85,11 +103,13 @@ docker run -d --name emrod \
   emrod-marketplace
 ```
 
-Health check Docker intégré sur `/api/health`.
+Health check Docker intégré sur `/api/health`. Fonctionne aussi sur Railway,
+Fly.io, une VPS, etc. ( Railway : build `npm ci && npm run build`, start
+`npm start`, mêmes variables d'environnement.)
 
 ---
 
-## 5. Vérifications post-déploiement
+## 4. Vérifications post-déploiement
 
 1. `GET /api/health` → `{"status":"ok"}` (base joignable).
 2. Page d'accueil + catalogue rendus (build `dist/` servi).
@@ -97,13 +117,14 @@ Health check Docker intégré sur `/api/health`.
 4. Commander en sandbox (sans clés Djomy) pour valider le tunnel de paiement.
 5. Configurer les clés Djomy **live** et refaire un paiement réel de contrôle.
 
-## 6. Exploitation
+## 5. Exploitation
 
-- **Scale** : Neon scale-to-zero sur le plan free — la première requête après
-  une pause peut prendre 1-2 s ; un plan compute always-on supprime la latence.
-- **Migrations** : automatiques au boot (`initSchema` + `runMigrations`,
-  idempotents). Aucune étape manuelle.
+- **Migrations** : automatiques au boot (`initDatabase`, idempotent + fast-path
+  versionné). Aucune étape manuelle — incrémenter `SCHEMA_VERSION` si le
+  schéma change.
 - **Backups** : activer les backups Neon (point-in-time restore) — la base
   contient les comptes, commandes et pièces KYC.
 - **Logs** : audit applicatif en base (tables `audit_logs`, `email_log`,
-  `security_events`) + logs stdout de l'hébergeur.
+  `security_events`) + logs de la plateforme (Vercel → Deployments → Functions).
+- **Domaine** : pointer le domaine personnalisé sur Vercel et renseigner
+  `APP_URL` (sitemap SEO).

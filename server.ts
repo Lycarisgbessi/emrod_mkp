@@ -1,6 +1,6 @@
 // Load .env / .env.local BEFORE any module reads process.env (JWT_SECRET, Djomy, VAPID…)
 import 'dotenv/config';
-import express from 'express';
+import express, { type Express } from 'express';
 import http from 'node:http';
 import cookieParser from 'cookie-parser';
 import path from 'node:path';
@@ -11,12 +11,18 @@ import { db, initDatabase } from './server/db';
 
 const PORT = Number(process.env.PORT || 3000);
 
-async function startServer() {
-  // Schema + seed against PostgreSQL (Neon) BEFORE any route can query
+/**
+ * Construit l'application Express complète : init base (schéma/seed/fast-path),
+ * API, sitemap, statiques. Partagée par le boot long-running (local, Docker,
+ * Render) et le handler serverless Vercel (api/index.ts, sans listen).
+ *
+ * `httpServer` n'est requis que pour le middleware Vite en développement
+ * (attache du WebSocket HMR).
+ */
+export async function createApp(httpServer?: http.Server): Promise<Express> {
   await initDatabase();
 
   const app = express();
-  const httpServer = http.createServer(app);
   app.set('trust proxy', 1);
   app.use(cookieParser());
   app.use(
@@ -76,13 +82,25 @@ ${urls.map((u) => `  <url><loc>${u}</loc></url>`).join('\n')}
     res.send(xml);
   });
 
-  if (process.env.NODE_ENV === 'production' && fs.existsSync(path.resolve(process.cwd(), 'dist'))) {
+  if (process.env.VERCEL === '1') {
+    // Serverless : le statique (dist/) et le fallback SPA sont gérés par la
+    // plateforme via vercel.json — rien à monter ici (fs read-only, pas de
+    // middleware Vite).
+  } else if (
+    process.env.NODE_ENV === 'production' &&
+    fs.existsSync(path.resolve(process.cwd(), 'dist'))
+  ) {
     const distDir = path.resolve(process.cwd(), 'dist');
     app.use(express.static(distDir));
     app.get('*', (_req, res) => {
       res.sendFile(path.join(distDir, 'index.html'));
     });
   } else {
+    if (!httpServer) {
+      throw new Error(
+        'Le middleware Vite (développement) exige un httpServer — le boot local le fournit.'
+      );
+    }
     const disableHmr = process.env.DISABLE_HMR === 'true';
     const vite = await createViteServer({
       server: {
@@ -96,12 +114,34 @@ ${urls.map((u) => `  <url><loc>${u}</loc></url>`).join('\n')}
     app.use(vite.middlewares);
   }
 
-  httpServer.listen(PORT, '0.0.0.0', () => {
-    console.log(`EMROD Marketplace running on http://0.0.0.0:${PORT}`);
-  });
+  return app;
 }
 
-startServer().catch((err) => {
-  console.error('Failed to start EMROD server:', err);
-  process.exit(1);
-});
+// Boot long-running (local, Docker, Render). Sur Vercel (VERCEL=1), createApp
+// est importé par api/index.ts et branché sur le runtime serverless — pas de
+// listen, pas de port à ouvrir.
+if (!process.env.VERCEL) {
+  void (async () => {
+    // L'app n'existe qu'après initDatabase : pendant la phase de démarrage,
+    // les requêtes reçoivent un 503 explicite au lieu d'une connexion muette.
+    let app: Express | null = null;
+    const httpServer = http.createServer((req, res) => {
+      if (!app) {
+        res.statusCode = 503;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ error: 'Serveur en démarrage, réessayez.' }));
+        return;
+      }
+      app(req, res);
+    });
+    try {
+      app = await createApp(httpServer);
+      httpServer.listen(PORT, '0.0.0.0', () => {
+        console.log(`EMROD Marketplace running on http://0.0.0.0:${PORT}`);
+      });
+    } catch (err) {
+      console.error('Failed to start EMROD server:', err);
+      process.exit(1);
+    }
+  })();
+}
