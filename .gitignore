@@ -24,3 +24,6 @@ Thumbs.db
 
 # Uploaded KYC documents (runtime data)
 uploads/
+
+.vercel
+.env*
