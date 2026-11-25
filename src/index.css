@@ -123,3 +123,24 @@
     border-color: #DDD5C0 !important;
   }
 }
+
+/* ── Responsive utilities ──────────────────────────────────────────────
+ * Rails d'onglets défilables sur mobile (portails admin/vendeur) sans
+ * scrollbar visible, et garde-fou iOS : un input < 16px déclenche un
+ * zoom automatique au focus sur iPhone — on force 1rem sur mobile.
+ */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 1rem;
+  }
+}

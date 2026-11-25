@@ -29,7 +29,9 @@ export const KpiTile: React.FC<{
   return (
     <div className="p-4 rounded-[var(--radius-m)] bg-[var(--color-surface)] border border-[var(--color-line)]">
       <p className="text-[11px] uppercase tracking-wide text-[var(--color-wood)]">{label}</p>
-      <p className={`font-display font-mono-num text-xl font-semibold mt-1 ${accentClass}`}>{value}</p>
+      {/* text-lg + break-words : les montants GNF (ex. « 20 050 000 GNF ») ne
+          débordent plus des tuiles 2-colonnes sur petits écrans. */}
+      <p className={`font-display font-mono-num text-lg sm:text-xl font-semibold mt-1 break-words ${accentClass}`}>{value}</p>
       {sub && <p className="text-[11px] text-[var(--color-wood)] mt-1">{sub}</p>}
     </div>
   );
@@ -164,7 +166,8 @@ export const SeasonalityGrid: React.FC<{
     return <p className="text-xs text-[var(--color-wood)]">Aucune commande sur la période.</p>;
   }
   return (
-    <table className="w-full text-[11px] text-center">
+    <div className="overflow-x-auto">
+      <table className="w-full text-[11px] text-center">
       <thead>
         <tr className="text-[var(--color-wood)]">
           <th className="text-left font-medium p-1.5">Jour</th>
@@ -194,6 +197,7 @@ export const SeasonalityGrid: React.FC<{
           </tr>
         ))}
       </tbody>
-    </table>
+      </table>
+    </div>
   );
 };

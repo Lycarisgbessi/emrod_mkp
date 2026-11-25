@@ -102,7 +102,7 @@ export const AdminSecurityTab: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <KpiTile label="Sessions actives" value={String(sec.activeSessions.length)} accent="gold" />
         <KpiTile label="Sessions révoquées" value={String(sec.revokedCount)} />
         <KpiTile

@@ -1123,8 +1123,8 @@ export const VendorPortalPage: React.FC<VendorPortalPageProps> = ({ mode }) => {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <nav className="flex flex-wrap items-center gap-2 border-b border-[var(--color-line)] pb-3">
+      {/* Navigation Tabs — rail défilable sur mobile (cf. AdminPortalPage) */}
+      <nav className="flex flex-nowrap overflow-x-auto no-scrollbar sm:flex-wrap sm:overflow-visible items-center gap-2 border-b border-[var(--color-line)] pb-3 -mx-4 px-4 sm:mx-0 sm:px-0">
         {[
           { id: 'overview', label: 'Tableau de bord & Conformité' },
           { id: 'products', label: `Mes Produits (${products.length})` },
@@ -1137,7 +1137,7 @@ export const VendorPortalPage: React.FC<VendorPortalPageProps> = ({ mode }) => {
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id as any)}
-            className={`px-4 py-2 rounded-[var(--radius-s)] text-xs sm:text-sm font-medium transition-colors ${
+            className={`shrink-0 whitespace-nowrap px-4 py-2 rounded-[var(--radius-s)] text-xs sm:text-sm font-medium transition-colors ${
               activeTab === tab.id
                 ? 'bg-[var(--color-ink)] text-white'
                 : 'text-[var(--color-wood)] hover:bg-[var(--color-cream)] hover:text-[var(--color-ink)]'

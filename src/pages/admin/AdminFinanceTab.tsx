@@ -76,7 +76,7 @@ export const AdminFinanceTab: React.FC<AdminFinanceTabProps> = ({ data }) => {
         <h2 className="font-display text-2xl font-semibold text-[var(--color-ink)]">
           Part EMROD sur les transactions (grand livre des commissions)
         </h2>
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <KpiTile label="Volume brut facturé" value={formatGNF(s.grossGnf)} />
           <KpiTile label="Commissions EMROD" value={formatGNF(s.commissionGnf)} accent="gold" sub={`${s.earnedCount} ligne(s)`} />
           <KpiTile label="Net versé ateliers" value={formatGNF(s.netVendorGnf)} accent="success" />

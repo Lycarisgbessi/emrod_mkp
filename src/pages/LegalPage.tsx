@@ -57,7 +57,7 @@ export const NotFoundPage: React.FC = () => {
   return (
     <div className="max-w-2xl mx-auto px-4 py-24 text-center space-y-5">
       <p className="font-mono-num text-sm font-semibold text-[var(--color-gold-deep)]">404</p>
-      <h1 className="font-display text-4xl font-semibold text-[var(--color-ink)]">
+      <h1 className="font-display text-3xl sm:text-4xl font-semibold text-[var(--color-ink)]">
         Cette page est introuvable
       </h1>
       <p className="text-sm text-[var(--color-body)]">

@@ -76,7 +76,7 @@ export const AdminSystemTab: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* Santé */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <KpiTile label="Disponibilité process" value={`${uptimeH} h ${uptimeM} min`} accent="success" />
         <KpiTile label="Base de données" value={`${h.database.sizeMb.toFixed(1)} Mo`} sub={`WAL ${h.database.walSizeMb.toFixed(1)} Mo`} />
         <KpiTile label="Mémoire Node" value={`${h.memoryMb} Mo`} sub={h.nodeVersion} />

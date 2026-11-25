@@ -183,7 +183,8 @@ export const AdminStatsTab: React.FC = () => {
               <strong className="font-mono-num">{stats.delivery.avgOrderToDeliveredDays != null ? `${stats.delivery.avgOrderToDeliveredDays} j` : '—'}</strong>
             </p>
           </div>
-          <table className="w-full text-[11px]">
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px]">
             <thead>
               <tr className="text-[var(--color-wood)] border-b border-[var(--color-line)]">
                 <th className="text-left p-1.5 font-medium">Zone</th>
@@ -202,7 +203,8 @@ export const AdminStatsTab: React.FC = () => {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       </section>
 

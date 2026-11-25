@@ -561,8 +561,9 @@ export const AdminPortalPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 15 Admin Command Tabs */}
-      <nav className="flex flex-wrap items-center gap-2 border-b border-[var(--color-line)] pb-3">
+      {/* 15 Admin Command Tabs — rail défilable sans scrollbar sur mobile,
+          retour au wrap naturel dès lg (plus de place). */}
+      <nav className="flex flex-nowrap overflow-x-auto no-scrollbar lg:flex-wrap lg:overflow-visible items-center gap-2 border-b border-[var(--color-line)] pb-3 -mx-4 px-4 sm:mx-0 sm:px-0">
         {[
           { id: 'overview', label: 'Vue d’ensemble', icon: FileText },
           { id: 'stats', label: 'Statistiques', icon: BarChart3 },
@@ -586,7 +587,7 @@ export const AdminPortalPage: React.FC = () => {
               key={t.id}
               type="button"
               onClick={() => setActiveTab(t.id as any)}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[var(--radius-s)] text-xs font-medium transition-colors ${
+              className={`inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 px-3.5 py-2 rounded-[var(--radius-s)] text-xs font-medium transition-colors ${
                 activeTab === t.id
                   ? 'bg-[var(--color-ink)] text-white'
                   : 'text-[var(--color-wood)] hover:bg-[var(--color-cream)] hover:text-[var(--color-ink)]'

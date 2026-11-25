@@ -671,9 +671,9 @@ export const CheckoutPage: React.FC = () => {
 
         <div className="mt-6 grid grid-cols-3 gap-3">
           {[
-            { n: 1, label: '01. Coordonnées' },
-            { n: 2, label: '02. Livraison' },
-            { n: 3, label: '03. Modalité & Paiement' },
+            { n: 1, label: '01. Coordonnées', short: '01. Coordonnées' },
+            { n: 2, label: '02. Livraison', short: '02. Livraison' },
+            { n: 3, label: '03. Modalité & Paiement', short: '03. Paiement' },
           ].map((st) => (
             <div key={st.n} className="space-y-1.5">
               <div className="h-1.5 rounded-full bg-[var(--color-cream)] overflow-hidden">
@@ -685,11 +685,14 @@ export const CheckoutPage: React.FC = () => {
                 />
               </div>
               <p
-                className={`text-xs font-medium ${
+                className={`text-[11px] sm:text-xs font-medium whitespace-nowrap ${
                   currentStep >= st.n ? 'text-[var(--color-ink)]' : 'text-[var(--color-wood)]'
                 }`}
               >
-                {st.label}
+                {/* Libellé raccourci sur mobile : « 03. Modalité & Paiement »
+                    passerait sur 3 lignes à 360px. */}
+                <span className="sm:hidden">{st.short}</span>
+                <span className="hidden sm:inline">{st.label}</span>
               </p>
             </div>
           ))}
